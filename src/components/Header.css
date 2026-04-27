@@ -1,0 +1,31 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--color-bg);
+  padding: 16px 20px 0;
+}
+
+.header-tabs {
+  display: flex;
+  gap: 0;
+  background: var(--color-primary-light);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.header-tab {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.header-tab.active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow);
+}

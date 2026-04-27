@@ -1,0 +1,122 @@
+.statistics {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stats-overview {
+  display: flex;
+}
+
+.stats-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats-card.main {
+  flex: 1;
+  text-align: center;
+  padding: 24px 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stats-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.stats-value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.stats-card.main .stats-value {
+  font-size: 28px;
+}
+
+.stats-value.expense {
+  color: var(--color-expense);
+}
+
+.stats-value.income {
+  color: var(--color-income);
+}
+
+.stats-value.positive {
+  color: var(--color-income);
+}
+
+.stats-value.negative {
+  color: var(--color-danger);
+}
+
+.stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stats-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.category-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.category-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-stat-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.category-stat-amount {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.category-stat-bar {
+  height: 6px;
+  background: var(--color-primary-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.category-stat-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.category-stat-percent {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
