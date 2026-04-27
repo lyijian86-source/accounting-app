@@ -1,0 +1,30 @@
+{
+  "name": "记账",
+  "short_name": "记账",
+  "description": "极简个人记账",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FEFBFC",
+  "theme_color": "#E8A0BF",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
