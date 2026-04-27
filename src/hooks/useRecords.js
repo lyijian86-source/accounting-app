@@ -5,7 +5,10 @@ import { generateId } from '../utils/format';
 const STORAGE_KEY = 'accounting_records';
 
 export function useRecords() {
-  const [records, setRecords] = useState(() => getStorage(STORAGE_KEY, []));
+  const [records, setRecords] = useState(() => {
+    const stored = getStorage(STORAGE_KEY, []);
+    return Array.isArray(stored) ? stored : [];
+  });
 
   useEffect(() => {
     setStorage(STORAGE_KEY, records);

@@ -15,7 +15,7 @@ const DEFAULT_TAGS = [
 export function useTags() {
   const [tags, setTags] = useState(() => {
     const stored = getStorage(STORAGE_KEY, null);
-    if (stored) return stored;
+    if (Array.isArray(stored)) return stored;
     setStorage(STORAGE_KEY, DEFAULT_TAGS);
     return DEFAULT_TAGS;
   });

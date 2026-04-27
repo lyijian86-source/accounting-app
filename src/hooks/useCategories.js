@@ -19,7 +19,7 @@ const DEFAULT_CATEGORIES = [
 export function useCategories() {
   const [categories, setCategories] = useState(() => {
     const stored = getStorage(STORAGE_KEY, null);
-    if (stored) return stored;
+    if (Array.isArray(stored)) return stored;
     setStorage(STORAGE_KEY, DEFAULT_CATEGORIES);
     return DEFAULT_CATEGORIES;
   });
