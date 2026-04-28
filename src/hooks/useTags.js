@@ -38,5 +38,9 @@ export function useTags() {
     setTags(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  return { tags, addTag, updateTag, deleteTag };
+  const replaceTags = useCallback((nextTags) => {
+    setTags(Array.isArray(nextTags) ? nextTags : []);
+  }, []);
+
+  return { tags, addTag, updateTag, deleteTag, replaceTags };
 }

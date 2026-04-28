@@ -38,5 +38,9 @@ export function useRecords() {
     setRecords(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  return { records, addRecord, updateRecord, deleteRecord };
+  const replaceRecords = useCallback((nextRecords) => {
+    setRecords(Array.isArray(nextRecords) ? nextRecords : []);
+  }, []);
+
+  return { records, addRecord, updateRecord, deleteRecord, replaceRecords };
 }

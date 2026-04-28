@@ -42,9 +42,13 @@ export function useCategories() {
     setCategories(prev => prev.filter(c => c.id !== id));
   }, []);
 
+  const replaceCategories = useCallback((nextCategories) => {
+    setCategories(Array.isArray(nextCategories) ? nextCategories : []);
+  }, []);
+
   const getCategoriesByType = useCallback((type) => {
     return categories.filter(c => c.type === type);
   }, [categories]);
 
-  return { categories, addCategory, updateCategory, deleteCategory, getCategoriesByType };
+  return { categories, addCategory, updateCategory, deleteCategory, replaceCategories, getCategoriesByType };
 }

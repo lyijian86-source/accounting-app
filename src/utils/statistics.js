@@ -30,12 +30,18 @@ function formatDayLabel(date) {
 function formatWeekLabel(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${month}/${day}周`;
+  return `${month}/${day}`;
 }
 
 function formatPercent(value) {
-  if (!Number.isFinite(value)) return null;
+  if (!Number.isFinite(value)) {
+    return null;
+  }
   return `${value > 0 ? '+' : ''}${value.toFixed(0)}%`;
+}
+
+function formatSignedAmount(amount) {
+  return `${amount >= 0 ? '+' : ''}${amount.toFixed(2)}`;
 }
 
 function getPeriodRange(days, now = new Date()) {
@@ -68,10 +74,12 @@ function getExpenseRecords(records) {
     if (record?.type !== 'expense' || !record?.category || !record?.datetime) {
       return false;
     }
+
     const amount = Number(record.amount);
     if (!Number.isFinite(amount)) {
       return false;
     }
+
     return !!parseRecordDate(record);
   });
 }
@@ -109,6 +117,7 @@ function getTrendMeta(currentAmount, previousAmount) {
       trend,
       trendText: '新出现',
       percentText: null,
+      percentValue: null,
       deltaAmount,
     };
   }
@@ -118,6 +127,7 @@ function getTrendMeta(currentAmount, previousAmount) {
       trend,
       trendText: '基本持平',
       percentText: null,
+      percentValue: 0,
       deltaAmount,
     };
   }
@@ -127,8 +137,15 @@ function getTrendMeta(currentAmount, previousAmount) {
     trend,
     trendText: trend === 'up' ? '上升' : '下降',
     percentText: formatPercent(percent),
+    percentValue: percent,
     deltaAmount,
   };
+}
+
+function getSignificanceScore(currentAmount, previousAmount, totalAmount) {
+  const deltaAmount = Math.abs(currentAmount - previousAmount);
+  const shareWeight = totalAmount > 0 ? currentAmount / totalAmount : 0;
+  return deltaAmount + currentAmount * 0.35 + shareWeight * 100;
 }
 
 function getWeekStart(date) {
@@ -195,7 +212,7 @@ function buildWeeklySeries(records, category, days, now = new Date()) {
   return series;
 }
 
-function getPeakDay(series) {
+function getPeakPoint(series) {
   return series.reduce((peak, item) => {
     if (!peak || item.amount > peak.amount) {
       return item;
@@ -204,7 +221,9 @@ function getPeakDay(series) {
   }, null);
 }
 
-function buildOverviewCategories(currentMap, previousMap, expenseRecords, days, now) {
+function buildOverviewCategories(currentMap, previousMap, expenseRecords, days, now, totalAmount) {
+  const currentRange = getPeriodRange(days, now);
+
   return Object.entries(currentMap)
     .map(([category, currentAmount]) => {
       const previousAmount = previousMap[category] || 0;
@@ -214,11 +233,13 @@ function buildOverviewCategories(currentMap, previousMap, expenseRecords, days, 
       const recentRecords = expenseRecords
         .filter((record) => {
           const date = parseRecordDate(record);
-          return record.category === category && date && isDateInRange(date, getPeriodRange(days, now));
+          return record.category === category && date && isDateInRange(date, currentRange);
         })
-        .sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
+        .sort((left, right) => new Date(right.datetime) - new Date(left.datetime))
         .slice(0, 5);
-      const peakDay = getPeakDay(dailySeries);
+      const peakPoint = getPeakPoint(dailySeries);
+      const sharePercent = totalAmount > 0 ? (currentAmount / totalAmount) * 100 : 0;
+      const significanceScore = getSignificanceScore(currentAmount, previousAmount, totalAmount);
 
       return {
         category,
@@ -228,15 +249,23 @@ function buildOverviewCategories(currentMap, previousMap, expenseRecords, days, 
         trend: trendMeta.trend,
         trendText: trendMeta.trendText,
         percentText: trendMeta.percentText,
-        miniSeries: dailySeries.slice(-7),
+        percentValue: trendMeta.percentValue,
+        sharePercent,
+        shareText: `${sharePercent.toFixed(0)}%`,
+        significanceScore,
+        miniSeries: dailySeries,
         dailySeries,
         weeklySeries,
         recentRecords,
         averageAmount: currentAmount / days,
-        peakDay,
+        peakPoint,
+        lastPoint: dailySeries[dailySeries.length - 1] || null,
+        comparisonText: trendMeta.trend === 'new'
+          ? `本期新出现，占总支出 ${sharePercent.toFixed(0)}%`
+          : `${formatSignedAmount(trendMeta.deltaAmount)}，占总支出 ${sharePercent.toFixed(0)}%`,
       };
     })
-    .sort((a, b) => b.currentAmount - a.currentAmount)
+    .sort((left, right) => right.significanceScore - left.significanceScore)
     .slice(0, TOP_CATEGORY_LIMIT);
 }
 
@@ -245,24 +274,43 @@ function buildSummary(categories, days) {
     return {
       title: `近${days}天暂无分类趋势`,
       description: '当前周期还没有支出记录。',
+      secondary: '',
     };
   }
 
   const rising = categories
     .filter((item) => item.trend === 'up' || item.trend === 'new')
-    .sort((a, b) => b.deltaAmount - a.deltaAmount)[0];
+    .sort((left, right) => right.deltaAmount - left.deltaAmount)[0];
+
+  const falling = categories
+    .filter((item) => item.trend === 'down')
+    .sort((left, right) => left.deltaAmount - right.deltaAmount)[0];
+
+  const title = `近${days}天分类趋势`;
 
   if (rising) {
     return {
-      title: `近${days}天分类趋势`,
-      description: `${rising.category}${rising.trend === 'new' ? '是新出现支出' : '增长最快'}，当前支出 ${rising.currentAmount.toFixed(2)}`,
+      title,
+      description: `${rising.category}${rising.trend === 'new' ? '是新出现支出' : '增长最快'}，${formatSignedAmount(rising.deltaAmount)}，占总支出 ${rising.shareText}`,
+      secondary: falling
+        ? `${falling.category}回落最多，${formatSignedAmount(falling.deltaAmount)}`
+        : `${categories[0].category}当前仍是最值得优先关注的分类`,
     };
   }
 
-  const highest = categories[0];
+  if (falling) {
+    return {
+      title,
+      description: `${falling.category}回落最多，${formatSignedAmount(falling.deltaAmount)}，当前占总支出 ${falling.shareText}`,
+      secondary: `${categories[0].category}仍是当前变化强度最高的分类`,
+    };
+  }
+
+  const strongest = categories[0];
   return {
-    title: `近${days}天分类趋势`,
-    description: `${highest.category}仍是当前周期支出最高分类，金额 ${highest.currentAmount.toFixed(2)}`,
+    title,
+    description: `${strongest.category}变化最明显，当前支出 ${strongest.currentAmount.toFixed(2)}，占总支出 ${strongest.shareText}`,
+    secondary: '当前主要分类整体比较平稳，没有明显上升或回落。',
   };
 }
 
@@ -283,8 +331,15 @@ export function getStatisticsViewModel(records, periodDays, now = new Date()) {
 
   const currentMap = sumByCategory(currentRecords);
   const previousMap = sumByCategory(previousRecords);
-  const categories = buildOverviewCategories(currentMap, previousMap, expenseRecords, periodDays, now);
   const totalAmount = sumAmounts(currentRecords);
+  const categories = buildOverviewCategories(
+    currentMap,
+    previousMap,
+    expenseRecords,
+    periodDays,
+    now,
+    totalAmount
+  );
 
   return {
     periodDays,

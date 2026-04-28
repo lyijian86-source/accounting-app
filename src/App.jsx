@@ -7,20 +7,22 @@ import ManageItems from './components/ManageItems';
 import { useRecords } from './hooks/useRecords';
 import { useCategories } from './hooks/useCategories';
 import { useTags } from './hooks/useTags';
+import { mergeBackupData, replaceBackupData } from './utils/backup';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('add');
   const [manageType, setManageType] = useState(null); // 'categories-expense' | 'categories-income' | 'tags'
 
-  const { records, addRecord, updateRecord, deleteRecord } = useRecords();
+  const { records, addRecord, updateRecord, deleteRecord, replaceRecords } = useRecords();
   const {
     categories,
     addCategory,
     updateCategory,
     deleteCategory,
+    replaceCategories,
     getCategoriesByType,
   } = useCategories();
-  const { tags, addTag, updateTag, deleteTag } = useTags();
+  const { tags, addTag, updateTag, deleteTag, replaceTags } = useTags();
 
   const handleManageCategories = () => {
     setManageType('categories-expense');
@@ -32,6 +34,19 @@ export default function App() {
 
   const closeManage = () => {
     setManageType(null);
+  };
+
+  const handleImportBackup = (payload, mode) => {
+    const currentData = { records, categories, tags };
+    const result = mode === 'replace'
+      ? replaceBackupData(payload)
+      : mergeBackupData(currentData, payload);
+
+    replaceRecords(result.data.records);
+    replaceCategories(result.data.categories);
+    replaceTags(result.data.tags);
+
+    return result.summary;
   };
 
   const getManageItems = () => {
@@ -88,6 +103,7 @@ export default function App() {
           tags={tags}
           onUpdate={updateRecord}
           onDelete={deleteRecord}
+          onImportBackup={handleImportBackup}
         />
       )}
 
