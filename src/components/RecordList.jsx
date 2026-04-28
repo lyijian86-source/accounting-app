@@ -11,8 +11,6 @@ export default function RecordList({
   tags,
   onUpdate,
   onDelete,
-  onManageCategories,
-  onManageTags,
 }) {
   const [editingRecord, setEditingRecord] = useState(null);
   const [editForm, setEditForm] = useState({});

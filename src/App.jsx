@@ -88,8 +88,6 @@ export default function App() {
           tags={tags}
           onUpdate={updateRecord}
           onDelete={deleteRecord}
-          onManageCategories={handleManageCategories}
-          onManageTags={handleManageTags}
         />
       )}
 
