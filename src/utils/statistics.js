@@ -44,6 +44,10 @@ function formatSignedAmount(amount) {
   return `${amount >= 0 ? '+' : ''}${amount.toFixed(2)}`;
 }
 
+function formatPlainAmount(amount) {
+  return amount.toFixed(2);
+}
+
 function getPeriodRange(days, now = new Date()) {
   const end = startOfDay(now);
   const start = addDays(end, -(days - 1));
@@ -287,30 +291,55 @@ function buildSummary(categories, days) {
     .sort((left, right) => left.deltaAmount - right.deltaAmount)[0];
 
   const title = `近${days}天分类趋势`;
+  const dominant = categories
+    .slice()
+    .sort((left, right) => right.sharePercent - left.sharePercent)[0];
+
+  if (rising && rising.trend === 'new') {
+    return {
+      title,
+      description: `${rising.category}是近${days}天新出现的支出分类，当前金额 ${formatPlainAmount(rising.currentAmount)}，占总支出 ${rising.shareText}。`,
+      secondary: dominant && dominant.category !== rising.category
+        ? `${dominant.category}仍是当前占比最高的分类，说明结构重心还没有转移。`
+        : '如果这不是一次性消费，说明你的支出结构正在出现新的变化点。',
+    };
+  }
+
+  if (rising && falling) {
+    return {
+      title,
+      description: `${rising.category}是近${days}天变化最明显的分类，较上一周期增加 ${formatPlainAmount(rising.deltaAmount)}；${falling.category}则回落最多。`,
+      secondary: dominant?.category === rising.category
+        ? `它现在仍占总支出 ${rising.shareText}，如果不是阶段性消费，这个分类值得继续盯住。`
+        : `${dominant?.category || rising.category}仍是当前占比最高的分类，说明“变化最大”和“花得最多”并不是同一件事。`,
+    };
+  }
 
   if (rising) {
     return {
       title,
-      description: `${rising.category}${rising.trend === 'new' ? '是新出现支出' : '增长最快'}，${formatSignedAmount(rising.deltaAmount)}，占总支出 ${rising.shareText}`,
-      secondary: falling
-        ? `${falling.category}回落最多，${formatSignedAmount(falling.deltaAmount)}`
-        : `${categories[0].category}当前仍是最值得优先关注的分类`,
+      description: `${rising.category}是近${days}天变化最明显的分类，较上一周期增加 ${formatPlainAmount(rising.deltaAmount)}，当前占总支出 ${rising.shareText}。`,
+      secondary: dominant?.category === rising.category
+        ? '如果这不是一次性消费，说明这个分类正在成为你当前支出的主要拉动力。'
+        : `${dominant?.category || rising.category}目前仍是占比最高的分类，你可以同时关注“总量”和“变化”这两个维度。`,
     };
   }
 
   if (falling) {
     return {
       title,
-      description: `${falling.category}回落最多，${formatSignedAmount(falling.deltaAmount)}，当前占总支出 ${falling.shareText}`,
-      secondary: `${categories[0].category}仍是当前变化强度最高的分类`,
+      description: `${falling.category}是近${days}天回落最明显的分类，较上一周期减少 ${formatPlainAmount(Math.abs(falling.deltaAmount))}，当前占总支出 ${falling.shareText}。`,
+      secondary: dominant?.category === falling.category
+        ? '它虽然还占主要支出，但短期压力已经开始回落。'
+        : `${dominant?.category || falling.category}仍是当前花费重心，说明最近的回落更多发生在局部分类。`,
     };
   }
 
-  const strongest = categories[0];
+  const strongest = dominant || categories[0];
   return {
     title,
-    description: `${strongest.category}变化最明显，当前支出 ${strongest.currentAmount.toFixed(2)}，占总支出 ${strongest.shareText}`,
-    secondary: '当前主要分类整体比较平稳，没有明显上升或回落。',
+    description: `${strongest.category}仍是近${days}天占比最高的支出分类，当前金额 ${formatPlainAmount(strongest.currentAmount)}，占总支出 ${strongest.shareText}。`,
+    secondary: '当前主要分类整体比较平稳，没有出现特别明显的上升或回落。',
   };
 }
 

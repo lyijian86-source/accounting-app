@@ -281,27 +281,27 @@ export default function Statistics({ records }) {
         </div>
       </section>
 
-      <section className="stats-section">
-        <div className="stats-section-head">
-          <h3 className="stats-section-title">分类趋势总览</h3>
-          <span className="stats-section-meta">按变化优先级排序</span>
-        </div>
+      <section className="stats-section stats-board">
+        <div className="stats-board-section">
+          <div className="stats-section-head">
+            <h3 className="stats-section-title">分类趋势总览</h3>
+          </div>
 
-        <div className="trend-card-list">
-          {viewModel.categories.map((item, index) => (
-            <button
-              key={item.category}
-              className={`trend-card ${activeCategory === item.category ? 'active' : ''}`}
-              onClick={() => handleCategoryChange(item.category)}
-            >
-              <div className="trend-card-copy">
-                <div className="trend-card-top">
-                  <div>
-                    <span className="trend-card-name">{item.category}</span>
-                    <div className="trend-card-headline">
-                      <span className={`trend-chip ${item.trend}`}>{item.trendText}</span>
-                      {item.percentText && (
-                        <strong className={`trend-card-rate ${getChangeAccent(item.trend)}`}>
+          <div className="trend-card-list">
+            {viewModel.categories.map((item, index) => (
+              <button
+                key={item.category}
+                className={`trend-card ${activeCategory === item.category ? 'active' : ''}`}
+                onClick={() => handleCategoryChange(item.category)}
+              >
+                <div className="trend-card-copy">
+                  <div className="trend-card-top">
+                    <div>
+                      <span className="trend-card-name">{item.category}</span>
+                      <div className="trend-card-headline">
+                        <span className={`trend-chip ${item.trend}`}>{item.trendText}</span>
+                        {item.percentText && (
+                    <strong className={`trend-card-rate ${getChangeAccent(item.trend)}`}>
                           {item.percentText}
                         </strong>
                       )}
@@ -312,102 +312,106 @@ export default function Statistics({ records }) {
 
                 <div className="trend-card-change">
                   <span>{item.comparisonText}</span>
-                  <span className="trend-card-share">占比 {item.shareText} · 排名 #{index + 1}</span>
+                  <span className="trend-card-share">#{index + 1}</span>
                 </div>
               </div>
 
-              <CurveChart series={item.miniSeries} compact={true} />
-            </button>
-          ))}
+                <CurveChart series={item.miniSeries} compact={true} />
+              </button>
+            ))}
+          </div>
         </div>
-      </section>
 
-      {selectedDetail && (
-        <section className="stats-section">
-          <div className="stats-section-head">
-            <div>
-              <h3 className="stats-section-title">{selectedDetail.category} 明细</h3>
-              <span className="stats-section-meta">曲线只强调峰值和最新位置</span>
-            </div>
-          </div>
+        {selectedDetail && (
+          <>
+            <div className="stats-board-divider" />
 
-          <div className="detail-metrics">
-            <MetricCard label="当前周期总支出" value={formatAmount(selectedDetail.currentAmount)} accent="expense" />
-            <MetricCard label="上一周期" value={formatAmount(selectedDetail.previousAmount)} />
-            <MetricCard label="日均支出" value={formatAmount(selectedDetail.averageAmount)} />
-            <MetricCard
-              label="变化幅度"
-              value={selectedDetail.percentText || selectedDetail.trendText}
-              accent={getChangeAccent(selectedDetail.trend)}
-            />
-          </div>
-
-          <div className="detail-block chart-surface">
-            <div className="detail-block-head">
-              <h4>按天趋势</h4>
-              <span>{selectedDailyPoint ? `${selectedDailyPoint.label} · ${formatAmount(selectedDailyPoint.amount)}` : `近${periodDays}天`}</span>
-            </div>
-            <CurveChart
-              series={selectedDetail.dailySeries}
-              interactive={true}
-              selectedKey={selectedDailyKey}
-              onSelect={setSelectedDailyKey}
-            />
-            {selectedDailyPoint && (
-              <div className="chart-readout">
-                <div className="chart-readout-main">
-                  <strong>{selectedDailyPoint.label}</strong>
-                  <span>{formatAmount(selectedDailyPoint.amount)}</span>
+            <div className="stats-board-section">
+              <div className="stats-section-head">
+                <div>
+                  <h3 className="stats-section-title">{selectedDetail.category} 明细</h3>
                 </div>
-                <span className="chart-readout-meta">
-                  {selectedDetail.peakPoint?.key === selectedDailyPoint.key ? '峰值点' : '单日读值'}
-                </span>
               </div>
-            )}
-          </div>
 
-          <div className="detail-block chart-surface">
-            <div className="detail-block-head">
-              <h4>按周趋势</h4>
-              <span>{selectedWeeklyPoint ? `${selectedWeeklyPoint.label} · ${formatAmount(selectedWeeklyPoint.amount)}` : '自然周聚合'}</span>
-            </div>
-            <CurveChart
-              series={selectedDetail.weeklySeries}
-              interactive={true}
-              selectedKey={selectedWeeklyKey}
-              onSelect={setSelectedWeeklyKey}
-            />
-            {selectedWeeklyPoint && (
-              <div className="chart-readout">
-                <div className="chart-readout-main">
-                  <strong>{selectedWeeklyPoint.label}</strong>
-                  <span>{formatAmount(selectedWeeklyPoint.amount)}</span>
-                </div>
-                <span className="chart-readout-meta">周聚合读值</span>
+              <div className="detail-metrics">
+                <MetricCard label="当前周期总支出" value={formatAmount(selectedDetail.currentAmount)} accent="expense" />
+                <MetricCard label="占比" value={selectedDetail.shareText} />
+                <MetricCard
+                  label="变化幅度"
+                  value={selectedDetail.percentText || selectedDetail.trendText}
+                  accent={getChangeAccent(selectedDetail.trend)}
+                />
               </div>
-            )}
-          </div>
 
-          <div className="detail-block">
-            <div className="detail-block-head">
-              <h4>最近记录</h4>
-              <span>帮助对应真实消费</span>
-            </div>
-
-            <div className="detail-records">
-              {selectedDetail.recentRecords.map((record) => (
-                <div key={record.id} className="detail-record">
-                  <div className="detail-record-main">
-                    <span className="detail-record-note">{record.note || selectedDetail.category}</span>
-                    <span className="detail-record-time">{formatDate(record.datetime)}</span>
+              <div className="detail-grid">
+                <div className="detail-block chart-surface">
+                  <div className="detail-block-head">
+                    <h4>按天趋势</h4>
+                    <span>{selectedDailyPoint ? `${selectedDailyPoint.label} · ${formatAmount(selectedDailyPoint.amount)}` : `近${periodDays}天`}</span>
                   </div>
-                  <strong className="detail-record-amount">{formatAmount(record.amount)}</strong>
+                  <CurveChart
+                    series={selectedDetail.dailySeries}
+                    interactive={true}
+                    selectedKey={selectedDailyKey}
+                    onSelect={setSelectedDailyKey}
+                  />
+                  {selectedDailyPoint && (
+                    <div className="chart-readout">
+                      <div className="chart-readout-main">
+                        <strong>{selectedDailyPoint.label}</strong>
+                        <span>{formatAmount(selectedDailyPoint.amount)}</span>
+                      </div>
+                      <span className="chart-readout-meta">
+                        {selectedDetail.peakPoint?.key === selectedDailyPoint.key ? '峰值点' : '单日读值'}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              ))}
+
+                <div className="detail-block chart-surface">
+                  <div className="detail-block-head">
+                    <h4>按周趋势</h4>
+                    <span>{selectedWeeklyPoint ? `${selectedWeeklyPoint.label} · ${formatAmount(selectedWeeklyPoint.amount)}` : '自然周聚合'}</span>
+                  </div>
+                  <CurveChart
+                    series={selectedDetail.weeklySeries}
+                    interactive={true}
+                    selectedKey={selectedWeeklyKey}
+                    onSelect={setSelectedWeeklyKey}
+                  />
+                  {selectedWeeklyPoint && (
+                    <div className="chart-readout">
+                      <div className="chart-readout-main">
+                        <strong>{selectedWeeklyPoint.label}</strong>
+                        <span>{formatAmount(selectedWeeklyPoint.amount)}</span>
+                      </div>
+                      <span className="chart-readout-meta">周聚合读值</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="detail-block detail-record-panel">
+                <div className="detail-block-head">
+                  <h4>最近记录</h4>
+                </div>
+
+                <div className="detail-records">
+                  {selectedDetail.recentRecords.map((record) => (
+                    <div key={record.id} className="detail-record">
+                      <div className="detail-record-main">
+                        <span className="detail-record-note">{record.note || selectedDetail.category}</span>
+                        <span className="detail-record-time">{formatDate(record.datetime)}</span>
+                      </div>
+                      <strong className="detail-record-amount">{formatAmount(record.amount)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </>
+        )}
+      </section>
     </div>
   );
 }
