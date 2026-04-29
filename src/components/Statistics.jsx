@@ -301,20 +301,20 @@ export default function Statistics({ records }) {
                       <div className="trend-card-headline">
                         <span className={`trend-chip ${item.trend}`}>{item.trendText}</span>
                         {item.percentText && (
-                    <strong className={`trend-card-rate ${getChangeAccent(item.trend)}`}>
-                          {item.percentText}
-                        </strong>
-                      )}
+                          <strong className={`trend-card-rate ${getChangeAccent(item.trend)}`}>
+                            {item.percentText}
+                          </strong>
+                        )}
+                      </div>
                     </div>
+                    <strong className="trend-card-amount">{formatAmount(item.currentAmount)}</strong>
                   </div>
-                  <strong className="trend-card-amount">{formatAmount(item.currentAmount)}</strong>
-                </div>
 
-                <div className="trend-card-change">
-                  <span>{item.comparisonText}</span>
-                  <span className="trend-card-share">#{index + 1}</span>
+                  <div className="trend-card-change">
+                    <span>{item.comparisonText}</span>
+                    <span className="trend-card-share">#{index + 1}</span>
+                  </div>
                 </div>
-              </div>
 
                 <CurveChart series={item.miniSeries} compact={true} />
               </button>
