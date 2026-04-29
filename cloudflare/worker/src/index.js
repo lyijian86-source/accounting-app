@@ -13,6 +13,17 @@ function json(data, init = {}) {
   });
 }
 
+function corsResponse(status = 204) {
+  return new Response(null, {
+    status,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Sync-Password',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    },
+  });
+}
+
 function unauthorized() {
   return json({ error: '同步密码错误。', code: 'UNAUTHORIZED' }, { status: 401 });
 }
@@ -40,7 +51,7 @@ function isValidPayload(payload) {
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
-      return json({}, { status: 204 });
+      return corsResponse();
     }
 
     if (!(await requireAuth(request, env))) {

@@ -37,9 +37,13 @@ async function parseResponse(response) {
 
 export function getSyncSettings() {
   const stored = getStorage(SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS);
-  return {
+  const merged = {
     ...DEFAULT_SYNC_SETTINGS,
     ...(stored && typeof stored === 'object' ? stored : {}),
+  };
+  return {
+    ...merged,
+    syncEndpoint: normalizeEndpoint(merged.syncEndpoint) || DEFAULT_SYNC_ENDPOINT,
   };
 }
 
