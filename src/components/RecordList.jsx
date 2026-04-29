@@ -556,6 +556,10 @@ export default function RecordList({
               </button>
             </div>
 
+            {!syncSettings.syncPassword && (
+              <div className="sync-hint">输入同步密码后，云端操作按钮才会生效。</div>
+            )}
+
             {syncStatus && (
               <div className="sync-status-card">
                 <span>云端 revision：{syncStatus.revision || '--'}</span>

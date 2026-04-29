@@ -2,10 +2,11 @@ import { buildBackupPayload } from './backup';
 import { getStorage, setStorage } from './storage';
 
 export const SYNC_SETTINGS_KEY = 'accounting_sync_settings';
+export const DEFAULT_SYNC_ENDPOINT = 'https://accounting-sync-worker.lyijian86.workers.dev';
 
 export const DEFAULT_SYNC_SETTINGS = {
   syncEnabled: false,
-  syncEndpoint: '',
+  syncEndpoint: DEFAULT_SYNC_ENDPOINT,
   syncPassword: '',
   lastSyncAt: '',
   lastKnownRevision: '',
@@ -46,7 +47,7 @@ export function saveSyncSettings(settings) {
   const next = {
     ...DEFAULT_SYNC_SETTINGS,
     ...settings,
-    syncEndpoint: normalizeEndpoint(settings.syncEndpoint),
+    syncEndpoint: normalizeEndpoint(settings.syncEndpoint) || DEFAULT_SYNC_ENDPOINT,
   };
   setStorage(SYNC_SETTINGS_KEY, next);
   return next;
