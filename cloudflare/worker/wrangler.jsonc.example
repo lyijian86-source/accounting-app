@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "accounting-sync-worker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-04-29",
+  "d1_databases": [
+    {
+      "binding": "SYNC_DB",
+      "database_name": "accounting-sync",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+    }
+  ]
+}

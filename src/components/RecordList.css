@@ -265,6 +265,68 @@
   gap: 10px;
 }
 
+.data-manager-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 2px 0;
+}
+
+.sync-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sync-section-head strong {
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.sync-section-head span {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.sync-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sync-field label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.sync-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sync-status-card,
+.sync-conflict {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.sync-status-card span,
+.sync-conflict span {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.sync-conflict strong {
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
 .import-status {
   padding: 12px 14px;
   border-radius: var(--radius-sm);

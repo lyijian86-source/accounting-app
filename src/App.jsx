@@ -24,6 +24,8 @@ export default function App() {
   } = useCategories();
   const { tags, addTag, updateTag, deleteTag, replaceTags } = useTags();
 
+  const snapshot = { records, categories, tags };
+
   const handleManageCategories = () => {
     setManageType('categories-expense');
   };
@@ -37,7 +39,7 @@ export default function App() {
   };
 
   const handleImportBackup = (payload, mode) => {
-    const currentData = { records, categories, tags };
+    const currentData = snapshot;
     const result = mode === 'replace'
       ? replaceBackupData(payload)
       : mergeBackupData(currentData, payload);
@@ -46,6 +48,14 @@ export default function App() {
     replaceCategories(result.data.categories);
     replaceTags(result.data.tags);
 
+    return result.summary;
+  };
+
+  const handleReplaceAllData = (payload) => {
+    const result = replaceBackupData(payload);
+    replaceRecords(result.data.records);
+    replaceCategories(result.data.categories);
+    replaceTags(result.data.tags);
     return result.summary;
   };
 
@@ -101,9 +111,11 @@ export default function App() {
           records={records}
           categories={categories}
           tags={tags}
+          snapshot={snapshot}
           onUpdate={updateRecord}
           onDelete={deleteRecord}
           onImportBackup={handleImportBackup}
+          onReplaceAllData={handleReplaceAllData}
         />
       )}
 
