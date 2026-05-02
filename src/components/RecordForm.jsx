@@ -17,10 +17,18 @@ export default function RecordForm({
   const [note, setNote] = useState('');
   const [datetime, setDatetime] = useState(toDatetimeLocal());
 
-  const filteredCategories = categories.filter(c => c.type === type);
+  const filteredCategories = categories.filter((item) => item.type === type);
+  const selectedCategory = filteredCategories.find((item) => item.name === category) || null;
+  const availableTags = (() => {
+    if (type !== 'expense' || !selectedCategory) {
+      return [];
+    }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+    return tags.filter((tag) => tag.categoryId === selectedCategory.id);
+  })();
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
     if (!amount || parseFloat(amount) <= 0) return;
     if (!category) return;
 
@@ -40,20 +48,31 @@ export default function RecordForm({
     setDatetime(toDatetimeLocal());
   };
 
+  const handleTypeChange = (nextType) => {
+    setType(nextType);
+    setCategory('');
+    setSelectedTags([]);
+  };
+
+  const handleCategoryChange = (nextCategory) => {
+    setCategory(nextCategory);
+    setSelectedTags([]);
+  };
+
   return (
     <form className="record-form" onSubmit={handleSubmit}>
       <div className="type-switch">
         <button
           type="button"
           className={`type-btn ${type === 'expense' ? 'active expense' : ''}`}
-          onClick={() => { setType('expense'); setCategory(''); }}
+          onClick={() => handleTypeChange('expense')}
         >
           支出
         </button>
         <button
           type="button"
           className={`type-btn ${type === 'income' ? 'active income' : ''}`}
-          onClick={() => { setType('income'); setCategory(''); }}
+          onClick={() => handleTypeChange('income')}
         >
           收入
         </button>
@@ -67,7 +86,7 @@ export default function RecordForm({
           min="0"
           placeholder="0.00"
           value={amount}
-          onChange={e => setAmount(e.target.value)}
+          onChange={(event) => setAmount(event.target.value)}
           autoFocus
         />
       </div>
@@ -80,32 +99,35 @@ export default function RecordForm({
           </button>
         </div>
         <div className="category-grid">
-          {filteredCategories.map(cat => (
+          {filteredCategories.map((item) => (
             <button
-              key={cat.id}
+              key={item.id}
               type="button"
-              className={`category-item ${category === cat.name ? 'active' : ''}`}
-              onClick={() => setCategory(cat.name)}
+              className={`category-item ${category === item.name ? 'active' : ''}`}
+              onClick={() => handleCategoryChange(item.name)}
             >
-              {cat.name}
+              {item.name}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="form-section">
-        <div className="section-header">
-          <span className="section-label">标签</span>
-          <button type="button" className="manage-btn" onClick={onManageTags}>
-            管理
-          </button>
+      {type === 'expense' && (
+        <div className="form-section">
+          <div className="section-header">
+            <span className="section-label">细分标签</span>
+            <button type="button" className="manage-btn" onClick={onManageTags}>
+              管理
+            </button>
+          </div>
+          <TagInput
+            tags={availableTags}
+            selectedTags={selectedTags}
+            onChange={setSelectedTags}
+            emptyMessage={selectedCategory ? '这个分类下还没有细分标签' : '先选分类，再选细分标签'}
+          />
         </div>
-        <TagInput
-          tags={tags}
-          selectedTags={selectedTags}
-          onChange={setSelectedTags}
-        />
-      </div>
+      )}
 
       <div className="form-section">
         <span className="section-label">备注</span>
@@ -113,7 +135,7 @@ export default function RecordForm({
           type="text"
           placeholder="添加备注..."
           value={note}
-          onChange={e => setNote(e.target.value)}
+          onChange={(event) => setNote(event.target.value)}
         />
       </div>
 
@@ -122,7 +144,7 @@ export default function RecordForm({
         <input
           type="datetime-local"
           value={datetime}
-          onChange={e => setDatetime(e.target.value)}
+          onChange={(event) => setDatetime(event.target.value)}
         />
       </div>
 

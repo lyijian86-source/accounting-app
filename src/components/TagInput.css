@@ -4,6 +4,13 @@
   gap: 8px;
 }
 
+.tag-empty {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  padding: 4px 0;
+}
+
 .tag-chip {
   padding: 6px 14px;
   font-size: 13px;

@@ -63,7 +63,9 @@ export default function App() {
     if (manageType === 'tags') {
       return {
         title: '管理标签',
+        itemType: 'tag',
         items: tags,
+        categories: getCategoriesByType('expense'),
         onAdd: addTag,
         onUpdate: updateTag,
         onDelete: deleteTag,
@@ -72,6 +74,7 @@ export default function App() {
     if (manageType === 'categories-expense') {
       return {
         title: '管理支出分类',
+        itemType: 'category',
         items: getCategoriesByType('expense'),
         onAdd: (name) => addCategory(name, 'expense'),
         onUpdate: updateCategory,
@@ -81,6 +84,7 @@ export default function App() {
     if (manageType === 'categories-income') {
       return {
         title: '管理收入分类',
+        itemType: 'category',
         items: getCategoriesByType('income'),
         onAdd: (name) => addCategory(name, 'income'),
         onUpdate: updateCategory,
@@ -120,14 +124,16 @@ export default function App() {
       )}
 
       {activeTab === 'stats' && (
-        <Statistics records={records} tags={tags} />
+        <Statistics records={records} categories={categories} tags={tags} />
       )}
 
       {manageProps && (
         <ManageItems
           open={true}
           title={manageProps.title}
+          itemType={manageProps.itemType}
           items={manageProps.items}
+          categories={manageProps.categories}
           onClose={closeManage}
           onAdd={manageProps.onAdd}
           onUpdate={manageProps.onUpdate}

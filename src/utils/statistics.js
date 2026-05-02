@@ -41,7 +41,7 @@ function isDateInRange(date, range) {
 }
 
 function isExpenseRecord(record) {
-  if (record?.type !== 'expense' || !record?.datetime) {
+  if (record?.type !== 'expense' || !record?.datetime || !record?.category) {
     return false;
   }
 
@@ -53,6 +53,14 @@ function isExpenseRecord(record) {
   return !!parseRecordDate(record);
 }
 
+function matchesCategory(record, selectedCategory) {
+  if (selectedCategory === 'all') {
+    return true;
+  }
+
+  return record.category === selectedCategory;
+}
+
 function matchesTag(record, selectedTag) {
   if (selectedTag === 'all') {
     return true;
@@ -61,20 +69,30 @@ function matchesTag(record, selectedTag) {
   return Array.isArray(record.tags) && record.tags.includes(selectedTag);
 }
 
-function formatFilterLabel(periodDays, selectedTag) {
+function formatFilterLabel(periodDays, selectedCategory, selectedTag) {
   const periodLabel = periodDays === 7 ? '近七日' : '近三十天';
-  const tagLabel = selectedTag === 'all' ? '全部' : selectedTag;
-  return `${periodLabel} · ${tagLabel}`;
+  const categoryLabel = selectedCategory === 'all' ? '全部分类' : selectedCategory;
+  const tagLabel = selectedTag === 'all' ? '全部标签' : selectedTag;
+  return `${periodLabel} · ${categoryLabel} · ${tagLabel}`;
 }
 
-export function getStatisticsViewModel(records, periodDays, selectedTag = 'all', now = new Date()) {
+export function getStatisticsViewModel(
+  records,
+  periodDays,
+  selectedCategory = 'all',
+  selectedTag = 'all',
+  now = new Date()
+) {
   const range = getPeriodRange(periodDays, now);
 
   const filteredRecords = records
     .filter(isExpenseRecord)
     .filter((record) => {
       const date = parseRecordDate(record);
-      return date && isDateInRange(date, range) && matchesTag(record, selectedTag);
+      return date
+        && isDateInRange(date, range)
+        && matchesCategory(record, selectedCategory)
+        && matchesTag(record, selectedTag);
     })
     .sort((left, right) => new Date(right.datetime) - new Date(left.datetime));
 
@@ -95,21 +113,15 @@ export function getStatisticsViewModel(records, periodDays, selectedTag = 'all',
   });
 
   const totalAmount = filteredRecords.reduce((sum, record) => sum + Number(record.amount), 0);
-  const peakPoint = series.reduce((peak, point) => {
-    if (!peak || point.amount > peak.amount) {
-      return point;
-    }
-    return peak;
-  }, null);
 
   return {
     periodDays,
+    selectedCategory,
     selectedTag,
-    filterLabel: formatFilterLabel(periodDays, selectedTag),
+    filterLabel: formatFilterLabel(periodDays, selectedCategory, selectedTag),
     totalAmount,
     hasRecords: filteredRecords.length > 0,
     series,
-    peakPoint,
     recentRecords: filteredRecords.slice(0, 8),
   };
 }

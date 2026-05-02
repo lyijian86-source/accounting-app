@@ -174,22 +174,49 @@ function CurveChart({ series, selectedKey, onSelect }) {
   );
 }
 
-export default function Statistics({ records, tags }) {
+export default function Statistics({ records, categories, tags }) {
   const [periodDays, setPeriodDays] = useState(7);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTag, setSelectedTag] = useState('all');
   const [selectedPointKey, setSelectedPointKey] = useState('');
 
-  const tagOptions = useMemo(
-    () => [{ id: 'all', name: '全部' }, ...tags],
-    [tags]
+  const expenseCategories = useMemo(
+    () => categories.filter((category) => category.type === 'expense'),
+    [categories]
   );
-  const activeTag = tagOptions.some((tag) => (tag.id === 'all' ? 'all' : tag.name) === selectedTag)
+
+  const categoryOptions = useMemo(
+    () => [{ id: 'all', name: '全部分类' }, ...expenseCategories],
+    [expenseCategories]
+  );
+
+  const activeCategory = categoryOptions.some((item) => (item.id === 'all' ? 'all' : item.name) === selectedCategory)
+    ? selectedCategory
+    : 'all';
+
+  const tagOptions = useMemo(() => {
+    if (activeCategory === 'all') {
+      return [{ id: 'all', name: '全部标签' }];
+    }
+
+    const category = expenseCategories.find((item) => item.name === activeCategory);
+    if (!category) {
+      return [{ id: 'all', name: '全部标签' }];
+    }
+
+    return [
+      { id: 'all', name: '全部标签' },
+      ...tags.filter((tag) => tag.categoryId === category.id),
+    ];
+  }, [activeCategory, expenseCategories, tags]);
+
+  const activeTag = tagOptions.some((item) => (item.id === 'all' ? 'all' : item.name) === selectedTag)
     ? selectedTag
     : 'all';
 
   const viewModel = useMemo(
-    () => getStatisticsViewModel(records, periodDays, activeTag),
-    [records, periodDays, activeTag]
+    () => getStatisticsViewModel(records, periodDays, activeCategory, activeTag),
+    [records, periodDays, activeCategory, activeTag]
   );
 
   const selectedPoint = viewModel.series.find((point) => point.key === selectedPointKey) || null;
@@ -216,7 +243,31 @@ export default function Statistics({ records, tags }) {
         </div>
 
         <div className="stats-filter-group">
-          <span className="stats-filter-label">标签</span>
+          <span className="stats-filter-label">分类</span>
+          <div className="stats-tags-scroll">
+            <div className="stats-tags">
+              {categoryOptions.map((category) => {
+                const value = category.id === 'all' ? 'all' : category.name;
+                return (
+                  <button
+                    key={category.id}
+                    className={`stats-tag-btn ${activeCategory === value ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCategory(value);
+                      setSelectedTag('all');
+                      setSelectedPointKey('');
+                    }}
+                  >
+                    {category.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-filter-group">
+          <span className="stats-filter-label">细分标签</span>
           <div className="stats-tags-scroll">
             <div className="stats-tags">
               {tagOptions.map((tag) => {
@@ -236,6 +287,10 @@ export default function Statistics({ records, tags }) {
               })}
             </div>
           </div>
+
+          {activeCategory !== 'all' && tagOptions.length === 1 && (
+            <span className="stats-filter-hint">这个分类下还没有已归属的细分标签。</span>
+          )}
         </div>
       </section>
 
@@ -264,7 +319,7 @@ export default function Statistics({ records, tags }) {
         ) : (
           <div className="stats-empty">
             <h3>当前筛选条件下没有支出记录</h3>
-            <p>换一个时间范围或标签后，这里会显示对应花费曲线。</p>
+            <p>换一个时间范围、分类或细分标签后，这里会显示对应花费曲线。</p>
           </div>
         )}
       </section>

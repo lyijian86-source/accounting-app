@@ -54,6 +54,7 @@ function normalizeTag(tag) {
   return {
     id: typeof tag.id === 'string' && tag.id ? tag.id : generateId(),
     name,
+    categoryId: typeof tag.categoryId === 'string' && tag.categoryId.trim() ? tag.categoryId.trim() : null,
   };
 }
 

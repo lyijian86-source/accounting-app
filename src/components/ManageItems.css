@@ -54,8 +54,19 @@
   padding: 12px 16px;
 }
 
+.manage-item-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .manage-item-name {
   font-size: 15px;
+}
+
+.manage-item-meta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .manage-item-actions {
@@ -95,8 +106,29 @@
   padding: 8px 16px;
 }
 
+.manage-edit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .manage-edit-row input {
   flex: 1;
+}
+
+.manage-meta-row {
+  padding: 0 16px 12px;
+}
+
+.manage-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.manage-meta-field span {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .save-btn {

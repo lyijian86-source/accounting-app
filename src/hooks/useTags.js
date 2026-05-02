@@ -5,11 +5,11 @@ import { generateId } from '../utils/format';
 const STORAGE_KEY = 'accounting_tags';
 
 const DEFAULT_TAGS = [
-  { id: 'tag_breakfast', name: '早餐' },
-  { id: 'tag_lunch', name: '午餐' },
-  { id: 'tag_dinner', name: '晚餐' },
-  { id: 'tag_snack', name: '零食' },
-  { id: 'tag_drink', name: '饮料' },
+  { id: 'tag_breakfast', name: '早餐', categoryId: 'cat_food' },
+  { id: 'tag_lunch', name: '午餐', categoryId: 'cat_food' },
+  { id: 'tag_dinner', name: '晚餐', categoryId: 'cat_food' },
+  { id: 'tag_snack', name: '零食', categoryId: 'cat_food' },
+  { id: 'tag_drink', name: '饮料', categoryId: 'cat_food' },
 ];
 
 const LEGACY_TAG_NAME_MAP = {
@@ -30,9 +30,14 @@ function normalizeTag(tag) {
     return null;
   }
 
+  const categoryId = typeof tag.categoryId === 'string' && tag.categoryId.trim()
+    ? tag.categoryId.trim()
+    : null;
+
   return {
     id: typeof tag.id === 'string' && tag.id ? tag.id : generateId(),
     name: name.trim(),
+    categoryId,
   };
 }
 
@@ -55,14 +60,16 @@ export function useTags() {
     setStorage(STORAGE_KEY, tags);
   }, [tags]);
 
-  const addTag = useCallback((name) => {
-    const tag = { id: generateId(), name };
+  const addTag = useCallback((name, categoryId = null) => {
+    const tag = normalizeTag({ id: generateId(), name, categoryId });
     setTags((prev) => [...prev, tag]);
     return tag;
   }, []);
 
-  const updateTag = useCallback((id, name) => {
-    setTags((prev) => prev.map((tag) => (tag.id === id ? { ...tag, name } : tag)));
+  const updateTag = useCallback((id, name, categoryId = null) => {
+    setTags((prev) => prev.map((tag) => (
+      tag.id === id ? normalizeTag({ ...tag, name, categoryId }) : tag
+    )));
   }, []);
 
   const deleteTag = useCallback((id) => {

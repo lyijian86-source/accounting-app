@@ -75,10 +75,29 @@ export default function RecordList({
     });
   };
 
+  const getAvailableTagsForCategory = (type, categoryName) => {
+    if (type !== 'expense' || !categoryName) {
+      return [];
+    }
+
+    const category = categories.find((item) => item.type === 'expense' && item.name === categoryName);
+    if (!category) {
+      return [];
+    }
+
+    return tags.filter((tag) => tag.categoryId === category.id);
+  };
+
   const saveEdit = () => {
     if (!editForm.amount || !editForm.category) return;
+    const allowedTagNames = new Set(filteredEditTags.map((tag) => tag.name));
+    const nextTags = editForm.type === 'expense'
+      ? editForm.tags.filter((tag) => allowedTagNames.has(tag))
+      : [];
+
     onUpdate(editingRecord.id, {
       ...editForm,
+      tags: nextTags,
       amount: parseFloat(editForm.amount),
       datetime: new Date(editForm.datetime).toISOString(),
     });
@@ -86,6 +105,7 @@ export default function RecordList({
   };
 
   const filteredEditCategories = categories.filter((category) => category.type === editForm.type);
+  const filteredEditTags = getAvailableTagsForCategory(editForm.type, editForm.category);
 
   const openDataManager = () => {
     setImportError('');
@@ -330,14 +350,24 @@ export default function RecordList({
               <button
                 type="button"
                 className={`type-btn ${editForm.type === 'expense' ? 'active expense' : ''}`}
-                onClick={() => setEditForm((form) => ({ ...form, type: 'expense', category: '' }))}
+                onClick={() => setEditForm((form) => ({
+                  ...form,
+                  type: 'expense',
+                  category: '',
+                  tags: [],
+                }))}
               >
                 支出
               </button>
               <button
                 type="button"
                 className={`type-btn ${editForm.type === 'income' ? 'active income' : ''}`}
-                onClick={() => setEditForm((form) => ({ ...form, type: 'income', category: '' }))}
+                onClick={() => setEditForm((form) => ({
+                  ...form,
+                  type: 'income',
+                  category: '',
+                  tags: [],
+                }))}
               >
                 收入
               </button>
@@ -361,7 +391,7 @@ export default function RecordList({
                     key={category.id}
                     type="button"
                     className={`category-item ${editForm.category === category.name ? 'active' : ''}`}
-                    onClick={() => setEditForm((form) => ({ ...form, category: category.name }))}
+                    onClick={() => setEditForm((form) => ({ ...form, category: category.name, tags: [] }))}
                   >
                     {category.name}
                   </button>
@@ -372,9 +402,10 @@ export default function RecordList({
             <div className="edit-field">
               <label>标签</label>
               <TagInput
-                tags={tags}
+                tags={filteredEditTags}
                 selectedTags={editForm.tags}
                 onChange={(nextTags) => setEditForm((form) => ({ ...form, tags: nextTags }))}
+                emptyMessage={editForm.category ? '这个分类下还没有细分标签' : '先选分类，再选细分标签'}
               />
             </div>
 
