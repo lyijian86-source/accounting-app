@@ -113,6 +113,7 @@ export function getStatisticsViewModel(
   });
 
   const totalAmount = filteredRecords.reduce((sum, record) => sum + Number(record.amount), 0);
+  const activeDays = series.filter((item) => item.amount > 0).length;
 
   return {
     periodDays,
@@ -120,6 +121,8 @@ export function getStatisticsViewModel(
     selectedTag,
     filterLabel: formatFilterLabel(periodDays, selectedCategory, selectedTag),
     totalAmount,
+    averageAmount: activeDays > 0 ? totalAmount / activeDays : 0,
+    activeDays,
     hasRecords: filteredRecords.length > 0,
     series,
     recentRecords: filteredRecords.slice(0, 8),

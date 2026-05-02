@@ -296,10 +296,22 @@ export default function Statistics({ records, categories, tags }) {
 
       <section className="stats-panel stats-chart-panel">
         <div className="stats-chart-head">
-          <div className="stats-summary">
-            <span className="stats-summary-label">{viewModel.filterLabel}</span>
-            <strong className="stats-summary-amount">{formatAmount(viewModel.totalAmount)}</strong>
-            <span className="stats-summary-caption">当前筛选支出总额</span>
+          <div className="stats-summary-grid">
+            <div className="stats-summary">
+              <span className="stats-summary-label">{viewModel.filterLabel}</span>
+              <strong className="stats-summary-amount">{formatAmount(viewModel.totalAmount)}</strong>
+              <span className="stats-summary-caption">当前筛选支出总额</span>
+            </div>
+
+            <div className="stats-summary stats-summary-secondary">
+              <span className="stats-summary-label">平均额</span>
+              <strong className="stats-summary-amount stats-summary-amount-secondary">
+                {formatAmount(viewModel.averageAmount)}
+              </strong>
+              <span className="stats-summary-caption">
+                按有支出的 {viewModel.activeDays} 天平均
+              </span>
+            </div>
           </div>
 
           {selectedPoint && (
