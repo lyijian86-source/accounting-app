@@ -1,11 +1,9 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
-const TOP_CATEGORY_LIMIT = 5;
-const FLAT_DELTA_THRESHOLD = 0.01;
 
 function startOfDay(date) {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
 }
 
 function addDays(date, amount) {
@@ -27,41 +25,10 @@ function formatDayLabel(date) {
   return `${month}/${day}`;
 }
 
-function formatWeekLabel(date) {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${month}/${day}`;
-}
-
-function formatPercent(value) {
-  if (!Number.isFinite(value)) {
-    return null;
-  }
-  return `${value > 0 ? '+' : ''}${value.toFixed(0)}%`;
-}
-
-function formatSignedAmount(amount) {
-  return `${amount >= 0 ? '+' : ''}${amount.toFixed(2)}`;
-}
-
-function formatPlainAmount(amount) {
-  return amount.toFixed(2);
-}
-
 function getPeriodRange(days, now = new Date()) {
   const end = startOfDay(now);
   const start = addDays(end, -(days - 1));
-  return {
-    start,
-    end,
-    endExclusive: addDays(end, 1),
-  };
-}
 
-function getPreviousPeriodRange(days, now = new Date()) {
-  const current = getPeriodRange(days, now);
-  const end = addDays(current.start, -1);
-  const start = addDays(end, -(days - 1));
   return {
     start,
     end,
@@ -73,307 +40,76 @@ function isDateInRange(date, range) {
   return date >= range.start && date < range.endExclusive;
 }
 
-function getExpenseRecords(records) {
-  return records.filter((record) => {
-    if (record?.type !== 'expense' || !record?.category || !record?.datetime) {
-      return false;
-    }
-
-    const amount = Number(record.amount);
-    if (!Number.isFinite(amount)) {
-      return false;
-    }
-
-    return !!parseRecordDate(record);
-  });
-}
-
-function sumAmounts(records) {
-  return records.reduce((sum, record) => sum + Number(record.amount), 0);
-}
-
-function sumByCategory(records) {
-  return records.reduce((map, record) => {
-    map[record.category] = (map[record.category] || 0) + Number(record.amount);
-    return map;
-  }, {});
-}
-
-function getTrendKey(currentAmount, previousAmount) {
-  if (previousAmount === 0 && currentAmount > 0) {
-    return 'new';
+function isExpenseRecord(record) {
+  if (record?.type !== 'expense' || !record?.datetime) {
+    return false;
   }
 
-  const delta = currentAmount - previousAmount;
-  if (Math.abs(delta) < FLAT_DELTA_THRESHOLD) {
-    return 'flat';
+  const amount = Number(record.amount);
+  if (!Number.isFinite(amount)) {
+    return false;
   }
 
-  return delta > 0 ? 'up' : 'down';
+  return !!parseRecordDate(record);
 }
 
-function getTrendMeta(currentAmount, previousAmount) {
-  const deltaAmount = currentAmount - previousAmount;
-  const trend = getTrendKey(currentAmount, previousAmount);
-
-  if (trend === 'new') {
-    return {
-      trend,
-      trendText: '新出现',
-      percentText: null,
-      percentValue: null,
-      deltaAmount,
-    };
+function matchesTag(record, selectedTag) {
+  if (selectedTag === 'all') {
+    return true;
   }
 
-  if (trend === 'flat') {
-    return {
-      trend,
-      trendText: '基本持平',
-      percentText: null,
-      percentValue: 0,
-      deltaAmount,
-    };
-  }
-
-  const percent = previousAmount > 0 ? (deltaAmount / previousAmount) * 100 : null;
-  return {
-    trend,
-    trendText: trend === 'up' ? '上升' : '下降',
-    percentText: formatPercent(percent),
-    percentValue: percent,
-    deltaAmount,
-  };
+  return Array.isArray(record.tags) && record.tags.includes(selectedTag);
 }
 
-function getSignificanceScore(currentAmount, previousAmount, totalAmount) {
-  const deltaAmount = Math.abs(currentAmount - previousAmount);
-  const shareWeight = totalAmount > 0 ? currentAmount / totalAmount : 0;
-  return deltaAmount + currentAmount * 0.35 + shareWeight * 100;
+function formatFilterLabel(periodDays, selectedTag) {
+  const periodLabel = periodDays === 7 ? '近七日' : '近三十天';
+  const tagLabel = selectedTag === 'all' ? '全部' : selectedTag;
+  return `${periodLabel} · ${tagLabel}`;
 }
 
-function getWeekStart(date) {
-  const base = startOfDay(date);
-  const day = base.getDay();
-  const offset = day === 0 ? -6 : 1 - day;
-  return addDays(base, offset);
-}
+export function getStatisticsViewModel(records, periodDays, selectedTag = 'all', now = new Date()) {
+  const range = getPeriodRange(periodDays, now);
 
-function buildDailySeries(records, category, days, now = new Date()) {
-  const range = getPeriodRange(days, now);
-  const buckets = new Map();
+  const filteredRecords = records
+    .filter(isExpenseRecord)
+    .filter((record) => {
+      const date = parseRecordDate(record);
+      return date && isDateInRange(date, range) && matchesTag(record, selectedTag);
+    })
+    .sort((left, right) => new Date(right.datetime) - new Date(left.datetime));
 
-  records.forEach((record) => {
-    if (record.category !== category) {
-      return;
-    }
-    const date = parseRecordDate(record);
-    if (!date || !isDateInRange(date, range)) {
-      return;
-    }
-    const key = startOfDay(date).toISOString();
-    buckets.set(key, (buckets.get(key) || 0) + Number(record.amount));
+  const dailyBuckets = new Map();
+  filteredRecords.forEach((record) => {
+    const key = startOfDay(new Date(record.datetime)).toISOString();
+    dailyBuckets.set(key, (dailyBuckets.get(key) || 0) + Number(record.amount));
   });
 
-  return Array.from({ length: days }, (_, index) => {
+  const series = Array.from({ length: periodDays }, (_, index) => {
     const date = addDays(range.start, index);
     const key = date.toISOString();
     return {
       key,
       label: formatDayLabel(date),
-      amount: buckets.get(key) || 0,
+      amount: dailyBuckets.get(key) || 0,
     };
   });
-}
 
-function buildWeeklySeries(records, category, days, now = new Date()) {
-  const range = getPeriodRange(days, now);
-  const firstWeekStart = getWeekStart(range.start);
-  const lastWeekStart = getWeekStart(range.end);
-  const buckets = new Map();
-
-  records.forEach((record) => {
-    if (record.category !== category) {
-      return;
-    }
-    const date = parseRecordDate(record);
-    if (!date || !isDateInRange(date, range)) {
-      return;
-    }
-    const key = getWeekStart(date).toISOString();
-    buckets.set(key, (buckets.get(key) || 0) + Number(record.amount));
-  });
-
-  const series = [];
-  for (let cursor = firstWeekStart; cursor <= lastWeekStart; cursor = addDays(cursor, 7)) {
-    const key = cursor.toISOString();
-    series.push({
-      key,
-      label: formatWeekLabel(cursor),
-      amount: buckets.get(key) || 0,
-    });
-  }
-  return series;
-}
-
-function getPeakPoint(series) {
-  return series.reduce((peak, item) => {
-    if (!peak || item.amount > peak.amount) {
-      return item;
+  const totalAmount = filteredRecords.reduce((sum, record) => sum + Number(record.amount), 0);
+  const peakPoint = series.reduce((peak, point) => {
+    if (!peak || point.amount > peak.amount) {
+      return point;
     }
     return peak;
   }, null);
-}
-
-function buildOverviewCategories(currentMap, previousMap, expenseRecords, days, now, totalAmount) {
-  const currentRange = getPeriodRange(days, now);
-
-  return Object.entries(currentMap)
-    .map(([category, currentAmount]) => {
-      const previousAmount = previousMap[category] || 0;
-      const trendMeta = getTrendMeta(currentAmount, previousAmount);
-      const dailySeries = buildDailySeries(expenseRecords, category, days, now);
-      const weeklySeries = buildWeeklySeries(expenseRecords, category, days, now);
-      const recentRecords = expenseRecords
-        .filter((record) => {
-          const date = parseRecordDate(record);
-          return record.category === category && date && isDateInRange(date, currentRange);
-        })
-        .sort((left, right) => new Date(right.datetime) - new Date(left.datetime))
-        .slice(0, 5);
-      const peakPoint = getPeakPoint(dailySeries);
-      const sharePercent = totalAmount > 0 ? (currentAmount / totalAmount) * 100 : 0;
-      const significanceScore = getSignificanceScore(currentAmount, previousAmount, totalAmount);
-
-      return {
-        category,
-        currentAmount,
-        previousAmount,
-        deltaAmount: trendMeta.deltaAmount,
-        trend: trendMeta.trend,
-        trendText: trendMeta.trendText,
-        percentText: trendMeta.percentText,
-        percentValue: trendMeta.percentValue,
-        sharePercent,
-        shareText: `${sharePercent.toFixed(0)}%`,
-        significanceScore,
-        miniSeries: dailySeries,
-        dailySeries,
-        weeklySeries,
-        recentRecords,
-        averageAmount: currentAmount / days,
-        peakPoint,
-        lastPoint: dailySeries[dailySeries.length - 1] || null,
-        comparisonText: trendMeta.trend === 'new'
-          ? `本期新出现，占总支出 ${sharePercent.toFixed(0)}%`
-          : `${formatSignedAmount(trendMeta.deltaAmount)}，占总支出 ${sharePercent.toFixed(0)}%`,
-      };
-    })
-    .sort((left, right) => right.significanceScore - left.significanceScore)
-    .slice(0, TOP_CATEGORY_LIMIT);
-}
-
-function buildSummary(categories, days) {
-  if (!categories.length) {
-    return {
-      title: `近${days}天暂无分类趋势`,
-      description: '当前周期还没有支出记录。',
-      secondary: '',
-    };
-  }
-
-  const rising = categories
-    .filter((item) => item.trend === 'up' || item.trend === 'new')
-    .sort((left, right) => right.deltaAmount - left.deltaAmount)[0];
-
-  const falling = categories
-    .filter((item) => item.trend === 'down')
-    .sort((left, right) => left.deltaAmount - right.deltaAmount)[0];
-
-  const title = `近${days}天分类趋势`;
-  const dominant = categories
-    .slice()
-    .sort((left, right) => right.sharePercent - left.sharePercent)[0];
-
-  if (rising && rising.trend === 'new') {
-    return {
-      title,
-      description: `${rising.category}是近${days}天新出现的支出分类，当前金额 ${formatPlainAmount(rising.currentAmount)}，占总支出 ${rising.shareText}。`,
-      secondary: dominant && dominant.category !== rising.category
-        ? `${dominant.category}仍是当前占比最高的分类，说明结构重心还没有转移。`
-        : '如果这不是一次性消费，说明你的支出结构正在出现新的变化点。',
-    };
-  }
-
-  if (rising && falling) {
-    return {
-      title,
-      description: `${rising.category}是近${days}天变化最明显的分类，较上一周期增加 ${formatPlainAmount(rising.deltaAmount)}；${falling.category}则回落最多。`,
-      secondary: dominant?.category === rising.category
-        ? `它现在仍占总支出 ${rising.shareText}，如果不是阶段性消费，这个分类值得继续盯住。`
-        : `${dominant?.category || rising.category}仍是当前占比最高的分类，说明“变化最大”和“花得最多”并不是同一件事。`,
-    };
-  }
-
-  if (rising) {
-    return {
-      title,
-      description: `${rising.category}是近${days}天变化最明显的分类，较上一周期增加 ${formatPlainAmount(rising.deltaAmount)}，当前占总支出 ${rising.shareText}。`,
-      secondary: dominant?.category === rising.category
-        ? '如果这不是一次性消费，说明这个分类正在成为你当前支出的主要拉动力。'
-        : `${dominant?.category || rising.category}目前仍是占比最高的分类，你可以同时关注“总量”和“变化”这两个维度。`,
-    };
-  }
-
-  if (falling) {
-    return {
-      title,
-      description: `${falling.category}是近${days}天回落最明显的分类，较上一周期减少 ${formatPlainAmount(Math.abs(falling.deltaAmount))}，当前占总支出 ${falling.shareText}。`,
-      secondary: dominant?.category === falling.category
-        ? '它虽然还占主要支出，但短期压力已经开始回落。'
-        : `${dominant?.category || falling.category}仍是当前花费重心，说明最近的回落更多发生在局部分类。`,
-    };
-  }
-
-  const strongest = dominant || categories[0];
-  return {
-    title,
-    description: `${strongest.category}仍是近${days}天占比最高的支出分类，当前金额 ${formatPlainAmount(strongest.currentAmount)}，占总支出 ${strongest.shareText}。`,
-    secondary: '当前主要分类整体比较平稳，没有出现特别明显的上升或回落。',
-  };
-}
-
-export function getStatisticsViewModel(records, periodDays, now = new Date()) {
-  const expenseRecords = getExpenseRecords(records);
-  const currentRange = getPeriodRange(periodDays, now);
-  const previousRange = getPreviousPeriodRange(periodDays, now);
-
-  const currentRecords = expenseRecords.filter((record) => {
-    const date = parseRecordDate(record);
-    return date && isDateInRange(date, currentRange);
-  });
-
-  const previousRecords = expenseRecords.filter((record) => {
-    const date = parseRecordDate(record);
-    return date && isDateInRange(date, previousRange);
-  });
-
-  const currentMap = sumByCategory(currentRecords);
-  const previousMap = sumByCategory(previousRecords);
-  const totalAmount = sumAmounts(currentRecords);
-  const categories = buildOverviewCategories(
-    currentMap,
-    previousMap,
-    expenseRecords,
-    periodDays,
-    now,
-    totalAmount
-  );
 
   return {
     periodDays,
+    selectedTag,
+    filterLabel: formatFilterLabel(periodDays, selectedTag),
     totalAmount,
-    categories,
-    summary: buildSummary(categories, periodDays),
+    hasRecords: filteredRecords.length > 0,
+    series,
+    peakPoint,
+    recentRecords: filteredRecords.slice(0, 8),
   };
 }

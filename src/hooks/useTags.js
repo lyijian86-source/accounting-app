@@ -12,10 +12,41 @@ const DEFAULT_TAGS = [
   { id: 'tag_drink', name: '饮料' },
 ];
 
+const LEGACY_TAG_NAME_MAP = {
+  '鏃╅': '早餐',
+  '鍗堥': '午餐',
+  '鏅氶': '晚餐',
+  '闆堕': '零食',
+  '楗枡': '饮料',
+};
+
+function normalizeTag(tag) {
+  if (!tag || typeof tag !== 'object') {
+    return null;
+  }
+
+  const name = LEGACY_TAG_NAME_MAP[tag.name] || tag.name;
+  if (typeof name !== 'string' || !name.trim()) {
+    return null;
+  }
+
+  return {
+    id: typeof tag.id === 'string' && tag.id ? tag.id : generateId(),
+    name: name.trim(),
+  };
+}
+
+function normalizeTags(tags) {
+  return tags.map(normalizeTag).filter(Boolean);
+}
+
 export function useTags() {
   const [tags, setTags] = useState(() => {
     const stored = getStorage(STORAGE_KEY, null);
-    if (Array.isArray(stored)) return stored;
+    if (Array.isArray(stored)) {
+      return normalizeTags(stored);
+    }
+
     setStorage(STORAGE_KEY, DEFAULT_TAGS);
     return DEFAULT_TAGS;
   });
@@ -26,20 +57,20 @@ export function useTags() {
 
   const addTag = useCallback((name) => {
     const tag = { id: generateId(), name };
-    setTags(prev => [...prev, tag]);
+    setTags((prev) => [...prev, tag]);
     return tag;
   }, []);
 
   const updateTag = useCallback((id, name) => {
-    setTags(prev => prev.map(t => t.id === id ? { ...t, name } : t));
+    setTags((prev) => prev.map((tag) => (tag.id === id ? { ...tag, name } : tag)));
   }, []);
 
   const deleteTag = useCallback((id) => {
-    setTags(prev => prev.filter(t => t.id !== id));
+    setTags((prev) => prev.filter((tag) => tag.id !== id));
   }, []);
 
   const replaceTags = useCallback((nextTags) => {
-    setTags(Array.isArray(nextTags) ? nextTags : []);
+    setTags(Array.isArray(nextTags) ? normalizeTags(nextTags) : []);
   }, []);
 
   return { tags, addTag, updateTag, deleteTag, replaceTags };

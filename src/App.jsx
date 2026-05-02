@@ -120,7 +120,7 @@ export default function App() {
       )}
 
       {activeTab === 'stats' && (
-        <Statistics records={records} />
+        <Statistics records={records} tags={tags} />
       )}
 
       {manageProps && (
